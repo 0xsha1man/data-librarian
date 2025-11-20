@@ -176,11 +176,14 @@
     <div id="right-panel">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <h1>
-                <div id="status-label" style="background-color: grey;"><span id="status-text">{status}</span></div>
+                <div id="status-label" style="background-color: grey;"><span id="status-text">Not Started</span></div>
             </h1>
         </div>
         <div class="row">
             <div id="log-file-path">Log File: <span id="log_file_path">{log_file_path}</span></div>
+            <div id="progress-container" style="font-size: 0.8em; color: #7f8c8d; display: none;">
+                Files Checked: <span id="files-checked">0</span> / <span id="total-files">0</span>
+            </div>
             <div id="log-last-updated">Log Last Updated: <span id="timestamp"></span></div>
         </div>
         <div id="output"></div>
@@ -193,6 +196,9 @@
         const statusLabel = document.getElementById('status-label');
         const statusText = document.getElementById('status-text');
         const timestampElement = document.getElementById('timestamp');
+        const progressContainer = document.getElementById('progress-container');
+        const filesCheckedSpan = document.getElementById('files-checked');
+        const totalFilesSpan = document.getElementById('total-files');
         let scriptRunning = false;
         // Map status values to their corresponding colors
         const statusColors = {
@@ -254,7 +260,7 @@
 
 
         function checkStatus() {
-            if (status === "Not Started") return;
+            if (statusText.textContent === "Not Started") return;
 
             fetch('/check_status')
                 .then(response => response.json())
@@ -267,14 +273,16 @@
                         runButton.textContent = 'Script Running...';
                         cancelButton.textContent = 'Cancel';
                         getOutput();
+                        progressContainer.style.display = 'block';
                     } else {
-                        if (statusText.textContent !== 'User Canceled') {
+                        if (statusText.textContent === 'Running') { 
                             setStatus('Finished');
                         }
                         runButton.disabled = false;
                         cancelButton.disabled = true;
                         runButton.textContent = 'Clean Duplicates';
                         cancelButton.textContent = 'Cancel';
+                        progressContainer.style.display = 'none';
                     }
                 })
                 .catch(error => {
@@ -290,6 +298,9 @@
                 .then(response => response.json())
                 .then(data => {
                     data.output.forEach(line => appendOutput(line));
+                    filesCheckedSpan.textContent = data.files_checked;
+                    totalFilesSpan.textContent = data.total_files;
+
                     if (scriptRunning) {
                         setTimeout(getOutput, 500);
                     }
@@ -315,13 +326,16 @@
                 .then(data => {
                     if (data.status === 'started') {
                         scriptRunning = true;
-                        checkStatus();
+                        runButton.disabled = true;
+                        cancelButton.disabled = false;
+                        runButton.textContent = 'Script Running...';
+                        getOutput(); // Start polling for output immediately
                     } else if (data.status === 'running') {
                         alert('Script is already running!');
                         runButton.disabled = true;
-                        cancelButton.disabled = true;
+                        cancelButton.disabled = false;
                         runButton.textContent = 'Script Running...';
-                        checkStatus();
+                        getOutput(); // Start polling if we find it's already running
                     }
                 })
                 .catch(error => {
@@ -367,7 +381,8 @@
             }
         });
 
-        setStatus('Not Started'); // Initial status        
+        // Initial status is now set in HTML, this call ensures color is correct on load.
+        setStatus('Not Started'); // This sets the color correctly on page load.
     </script>
 </body>
 

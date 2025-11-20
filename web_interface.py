@@ -6,6 +6,7 @@ Author: Jesse Tudela
 import http.server
 import socketserver
 import subprocess
+import shutil
 import threading
 import time
 import os
@@ -19,7 +20,7 @@ from datetime import datetime
 
 # Import from local modules
 try:
-    from config import EXCLUDED_FOLDERS, DEFAULT_HOLDING_DIR, DEFAULT_LOG_FILE, MOVE_DUPLICATES
+    from config import EXCLUDED_FOLDERS, DEFAULT_HOLDING_DIR, DEFAULT_LOG_FILE, MOVE_DUPLICATES, PORT, EXCLUDED_FILES
     from utils import sanitize_filename, calculate_sha256, log_message
 except ImportError:
     print("Error: 'config.py' or 'utils.py' not found. Please make sure they are in the same directory.")
@@ -37,7 +38,6 @@ log_file_path = ""
 # Use os.path.abspath to get a clean, absolute path
 root_directory = os.path.abspath(".") 
 
-PORT = 2226
 # ------------------------------
 
 
@@ -85,12 +85,12 @@ def run_script():
         # --- First Pass: Count files (for progress bar) ---
         log_message(log, "Calculating total files...\n")
         temp_total = 0
-        for root, dirs, files in os.walk(root_dir):
+        for root, dirs, files in os.walk(root_directory):
             # Ensure we respect excluded folders during count
             dirs[:] = [d for d in dirs if d not in EXCLUDED_FOLDERS]
             
             # Exclude script/config files
-            current_files = [f for f in files if f not in ("web_interface.py", "utils.py", "config.py", "index.html")]
+            current_files = [f for f in files if f not in EXCLUDED_FILES]
             temp_total += len(current_files)
         
         total_files = temp_total # Assign to global
@@ -98,7 +98,7 @@ def run_script():
         
         # --- Second Pass: Process files ---
         files_processed = 0 # Use a local counter for the final tally
-        for root, dirs, files in os.walk(root_dir):
+        for root, dirs, files in os.walk(root_directory):
             if not keep_running:
                 log_message(log, "\n*** USER CANCELLATION DETECTED ***\n")
                 break
@@ -110,7 +110,7 @@ def run_script():
                     break
 
                 # Exclude self and helper files
-                if filename in ("web_interface.py", "utils.py", "config.py", "index.html"):
+                if filename in EXCLUDED_FILES:
                     continue
 
                 filepath = os.path.join(root, filename)
@@ -127,8 +127,8 @@ def run_script():
                         original_filepath = file_hashes[file_hash]
                         original_filename = os.path.basename(original_filepath)
                         duplicate_filename = os.path.basename(filepath)
-                        sanitized_filename = sanitize_filename(duplicate_filename)
-                        sanitized_dest_path = os.path.join(holding_dir, sanitized_filename)
+                        sanitized_filename = sanitize_filename(duplicate_filename) # Use the imported config variable
+                        sanitized_dest_path = os.path.join(DEFAULT_HOLDING_DIR, sanitized_filename)
 
                         log_message(
                             log,
@@ -163,7 +163,7 @@ def run_script():
             f"\n\n----------------------------------------------------------------------------------------------------\n"
             f"DUPLICATE FILE DETECTION FINISHED AT: [{end_time.isoformat()}]\n"
             f"Total Time Taken: [{duration}]\n"
-            f"Total Files Processed: [{files_processed}]\G"
+            f"Total Files Processed: [{files_processed}]\n"
             f"Total Files Moved: [{files_moved}]\n",
         )
 
@@ -187,16 +187,6 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
     """
     Custom HTTP request handler for the web interface.
     """
-    
-    # Class-level variables to store state, accessible by all instances
-    output_buffer = []
-    script_running = False
-    script_process = None
-    keep_running = True
-    total_files = 0
-    files_checked = 0
-    log_file_path = ""
-    root_directory = os.path.abspath(".")
 
     def do_GET(self):
         """
@@ -212,9 +202,9 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 with codecs.open('index.html', 'r', encoding='utf-8') as f:
                     content = f.read()
                     # Inject dynamic values
-                    content = content.replace("{rootfolder}", MyHandler.root_directory)
-                    content = content.replace("{log_file_path}", MyHandler.log_file_path)
-                    content = content.replace("{output}", "".join(MyHandler.output_buffer)) # Send current buffer on load
+                    content = content.replace("{rootfolder}", root_directory)
+                    content = content.replace("{log_file_path}", log_file_path)
+                    content = content.replace("{output}", "".join(output_buffer)) # Send current buffer on load
                     self.wfile.write(content.encode('utf-8'))
             except FileNotFoundError:
                 self.send_error(404, "File not found: index.html")
@@ -225,8 +215,8 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             # Send current buffer contents and clear it
-            output_data = {'output': MyHandler.output_buffer, 'files_checked': MyHandler.files_checked, 'total_files': MyHandler.total_files}
-            MyHandler.output_buffer = [] 
+            output_data = {'output': output_buffer, 'files_checked': files_checked, 'total_files': total_files}
+            globals()['output_buffer'] = []
             self.wfile.write(json.dumps(output_data).encode('utf-8'))
             return
 
@@ -234,11 +224,11 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({'running': MyHandler.script_running, 'log_file_path': MyHandler.log_file_path}).encode('utf-8'))
+            self.wfile.write(json.dumps({'running': script_running, 'log_file_path': log_file_path}).encode('utf-8'))
             return
 
         elif url_path == '/run_script':
-            if MyHandler.script_running:
+            if script_running:
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -253,31 +243,16 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({'status': 'started', 'log_file_path': MyHandler.log_file_path}).encode('utf-8'))
+            self.wfile.write(json.dumps({'status': 'started', 'log_file_path': log_file_path}).encode('utf-8'))
             return
 
         elif url_path == '/cancel_script':
-            if MyHandler.script_process and MyHandler.script_running:
+            if script_running:
                 print("Attempting to terminate script...")
-                MyHandler.keep_running = False  # Signal the loop to stop
-                try:
-                    # Use signal on Windows (more forceful)
-                    if os.name == 'nt':
-                        MyHandler.script_process.send_signal(signal.CTRL_C_EVENT)
-                    else:
-                        MyHandler.script_process.terminate() # POSIX
-                    
-                    MyHandler.script_process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    print("Script did not terminate gracefully, killing...")
-                    MyHandler.script_process.kill()
-                except Exception as e:
-                     print(f"Error during termination: {e}")
-                
-                MyHandler.script_running = False
-                MyHandler.script_process = None
-                MyHandler.output_buffer.append("\n*** SCRIPT CANCELLED BY USER ***\n")
-                
+                globals()['keep_running'] = False  # Signal the loop to stop
+                # The script will stop on its own, no need to kill a process
+                globals()['output_buffer'].append("\n*** SCRIPT CANCELLED BY USER ***\n")
+
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -333,16 +308,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nShutting down server...")
         # Attempt to stop the script process if it's running
-        if script_process and script_running:
+        if script_running:
             print("Stopping running script...")
             keep_running = False
-            try:
-                if os.name == 'nt':
-                    script_process.send_signal(signal.CTRL_C_EVENT)
-                else:
-                    script_process.terminate()
-                script_process.wait(timeout=2)
-            except Exception as e:
-                print(f"Error stopping script process: {e}")
-                script_process.kill()
+            time.sleep(1) # Give the script a moment to see the flag
         sys.exit(0)
