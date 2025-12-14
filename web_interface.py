@@ -13,7 +13,6 @@ import os
 import json
 import codecs
 import sys
-import webbrowser
 import signal
 from urllib.parse import urlparse
 from datetime import datetime
@@ -293,12 +292,6 @@ if __name__ == "__main__":
     server_thread.daemon = True  # So the server shuts down when the main thread does.
     server_thread.start()
 
-    # Open a browser to the interface.
-    try:
-        webbrowser.open(f"http://localhost:{PORT}")
-    except Exception as e:
-        print(f"Could not open browser: {e}")
-        print(f"Please open http://localhost:{PORT} in your browser.")
 
     # Keep the main thread alive, or the server will exit.
     # This also allows handling KeyboardInterrupt (Ctrl+C) gracefully.

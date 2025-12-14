@@ -17,23 +17,58 @@ This is a Python-based application designed to scan a specified directory (and i
 
 ## Project Files
 
-* `web_interface.py`: The main script to run. This starts the web server and handles the application logic.
-* `index.html`: The HTML/CSS/JavaScript file that defines the web interface.
-* `utils.py`: Contains helper functions for hashing, logging, and filename sanitization.
-* `config.py`: Contains configuration variables like `EXCLUDED_FOLDERS` and `MOVE_DUPLICATES`.
+*   `web_interface.py`: The main script to run. This starts the web server and handles the application logic.
+*   `index.html`: The HTML/CSS/JavaScript file that defines the web interface.
+*   `utils.py`: Contains helper functions for hashing, logging, and filename sanitization.
+*   `config.py`: Contains configuration variables like `EXCLUDED_FOLDERS` and `MOVE_DUPLICATES`.
 
-## Setup & Installation
+## Getting Started
 
-1.  **Place Files:** Ensure all four files (`web_interface.py`, `utils.py`, `config.py`, `index.html`) are in the same directory. This directory will be the **root folder** that the script scans.
-2.  **Configure:** Open `config.py` in a text editor.
-    * Add any folder names you wish to exclude from the scan to the `EXCLUDED_FOLDERS` list.
-    * Set `MOVE_DUPLICATES` to `True` (to move duplicate files) or `False` (to only generate a log report).
-3.  **Run:** Open your terminal or command prompt (like PowerShell), navigate to the directory containing the files, and run the main script:
-    ```bash
-    python web_interface.py
-    ```
-    *(Note: On some systems, you may need to use `python3` instead of `python`)*
-4.  **Access:** The script will automatically open the web interface in your default browser at `http://localhost:2226`. The "Root Folder" field will display the directory you ran the script from.
+Follow these steps to set up and run the application on your computer (Windows, Linux, or Mac).
+
+### Step 1: Install Python
+You need to have Python installed.
+*   **Windows:** Download and install from [python.org](https://www.python.org/downloads/). Make sure to check the box **"Add Python to PATH"** during installation.
+*   **Linux:** Python is usually pre-installed. Open a terminal and type `python3 --version`. If it says "command not found," install it (e.g., `sudo apt install python3` on Ubuntu).
+
+### Step 2: Prepare a Directory
+It's best to keep your projects organized. Open your terminal or command prompt (PowerShell on Windows) and run:
+```bash
+# Create a folder for your projects (optional but recommended)
+mkdir Projects
+cd Projects
+```
+
+### Step 3: Get the Code
+Download the code from GitHub. This will create a new folder called `data-librarian` inside your current folder.
+```bash
+git clone https://github.com/0xsha1man/data-librarian.git
+```
+
+### Step 4: Setup
+Go into the newly created folder:
+```bash
+cd data-librarian
+```
+
+### Step 5: Run the Application
+Run the script using the command appropriate for your system:
+
+**On Windows:**
+```bash
+python web_interface.py
+```
+
+**On Linux / Mac / WSL:**
+```bash
+python3 web_interface.py
+```
+
+### Step 6: Access the Interface
+Once the script is running, it will not open a window automatically.
+1.  Open your web browser (Chrome, Firefox, etc.).
+2.  Type the following address into the address bar and press Enter:
+    `http://localhost:2226`
 
 ## How to Use the Interface
 
@@ -41,10 +76,8 @@ This is a Python-based application designed to scan a specified directory (and i
 2.  **Monitor:**
     * The status indicator will change to "Running".
     * The log output will appear in the right-hand panel in real-time.
-    * The "Log Last Updated" timestamp will refresh as new output is received.
-    * The "Log File" path will appear once the process starts.
-3.  **Cancel:** Click the **"Cancel"** button at any time to stop the process. The status will change to "User Canceled".
-4.  **Review:** Once the process is "Finished" (or "Canceled"), you can check the `_DuplicateHoldingBin` folder to review the files that were moved. The corresponding log file will be in the same directory.
+3.  **Cancel:** Click the **"Cancel"** button at any time to stop the process.
+4.  **Review:** Once finished, check the `_DuplicateHoldingBin` folder to see moved files and logs.
 
 ## Understanding the Log File
 
