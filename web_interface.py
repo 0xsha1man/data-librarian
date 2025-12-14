@@ -12,6 +12,7 @@ import time
 import os
 import json
 import codecs
+import io
 import sys
 import signal
 from urllib.parse import urlparse
@@ -19,10 +20,11 @@ from datetime import datetime
 
 # Import from local modules
 try:
-    from config import EXCLUDED_FOLDERS, DEFAULT_HOLDING_DIR, DEFAULT_LOG_FILE, MOVE_DUPLICATES, PORT, EXCLUDED_FILES
+    from config import EXCLUDED_FOLDERS, DEFAULT_HOLDING_DIR, DEFAULT_LOG_FILE, MOVE_DUPLICATES, PORT, EXCLUDED_FILES, PDF_MAX_SIZE_MB, PDF_TARGET_CHUNK_MB, PDF_PAGE_CHUNK_LIMIT
     from utils import sanitize_filename, calculate_sha256, log_message
+    from pypdf import PdfReader, PdfWriter
 except ImportError:
-    print("Error: 'config.py' or 'utils.py' not found. Please make sure they are in the same directory.")
+    print("Error: 'config.py', 'utils.py', or 'pypdf' not found. Please make sure they are in the same directory and pypdf is installed.")
     sys.exit(1)
 
 
@@ -37,6 +39,10 @@ log_file_path = ""
 # Use os.path.abspath to get a clean, absolute path
 root_directory = os.path.abspath(".") 
 
+# --- PDF Global Variables ---
+pdf_script_running = False
+pdf_keep_running = True
+pdf_output_buffer = []
 # ------------------------------
 
 
@@ -182,6 +188,152 @@ def run_script():
         script_running = False
         script_process = None # Clear process object
 
+def split_pdf_adaptive(file_path, target_max_mb, initial_page_chunk, log):
+    """
+    Splits a PDF into chunks. If a chunk exceeds target_max_mb, it retries with smaller page counts.
+    """
+    try:
+        reader = PdfReader(file_path)
+        total_pages = len(reader.pages)
+        base_name = os.path.splitext(file_path)[0]
+        
+        current_page_chunk = initial_page_chunk
+        start_page = 0
+        
+        while start_page < total_pages:
+            if not pdf_keep_running:
+                 return
+
+            # Try to create a chunk
+            temp_files_created = []
+            success = False
+            
+            while not success:
+                if not pdf_keep_running:
+                     return
+
+                end_page = min(start_page + current_page_chunk, total_pages)
+                writer = PdfWriter()
+                
+                for i in range(start_page, end_page):
+                    writer.add_page(reader.pages[i])
+                
+                part_num = (start_page // initial_page_chunk) + 1 # This logic might drift with adaptive sizing, but unique naming is key
+                # Use a specific naming convention to avoid collisions if we drift
+                output_filename = f"{base_name}_part_{start_page + 1}-{end_page}.pdf"
+                
+                try:
+                    with open(output_filename, "wb") as out_file:
+                        writer.write(out_file)
+                    temp_files_created.append(output_filename)
+                    
+                    # Check size
+                    file_size_mb = os.path.getsize(output_filename) / (1024 * 1024)
+                    
+                    if file_size_mb > target_max_mb:
+                        log_message(log, f"   > Chunk {output_filename} is {file_size_mb:.2f}MB (Max: {target_max_mb}MB). Too big.\n")
+                        # Delete the file
+                        os.remove(output_filename)
+                        temp_files_created.remove(output_filename)
+                        
+                        # Calculate new safer chunk size
+                        ratio = target_max_mb / file_size_mb
+                        current_page_chunk = int(current_page_chunk * ratio * 0.9) # 90% compliance factor
+                        if current_page_chunk < 1:
+                            current_page_chunk = 1 # Minimum 1 page
+                        
+                        log_message(log, f"   > Retrying with {current_page_chunk} pages...\n")
+                    else:
+                        success = True
+                        log_message(log, f"   > Created: {os.path.basename(output_filename)} ({file_size_mb:.2f}MB)\n")
+                        start_page = end_page
+                        # Reset chunk size to initial for next batch? Or keep adaptive? 
+                        # Let's keep adaptive for this file as pages are likely similar density
+                        
+                except Exception as e:
+                    log_message(log, f"*** ERROR writing chunk: {e}\n")
+                    return
+
+    except Exception as e:
+        log_message(log, f"*** ERROR processing PDF {file_path}: {e}\n")
+
+
+def run_pdf_script(target_folder, max_mb, initial_pages):
+    global pdf_script_running, pdf_output_buffer, pdf_keep_running
+    
+    pdf_script_running = True
+    pdf_output_buffer = []
+    pdf_keep_running = True
+    
+    start_time = datetime.now()
+    log = io.StringIO() # Buffer log for now, or could write to file. User didn't request a persistent log file like duplicates.
+    # Let's wrap log to point to our buffer helper
+    # Actually, let's just make a simple wrapper class or use a list
+    
+    # We will just append to pdf_output_buffer directly for simplicity in this thread
+    def log_to_buffer(msg):
+        pdf_output_buffer.append(msg)
+        print(msg, end="")
+
+    try:
+        log_to_buffer(f"PDF SPLITTER STARTED AT: [{start_time.isoformat()}]\n")
+        log_to_buffer(f"Target Folder: {target_folder}\n")
+        log_to_buffer(f"Max File Size: {max_mb} MB\n")
+        log_to_buffer(f"Initial Page Split: {initial_pages}\n")
+        log_to_buffer("-" * 60 + "\n")
+
+        if not os.path.exists(target_folder):
+            log_to_buffer(f"*** ERROR: Folder not found: {target_folder}\n")
+            return
+
+        pdf_files_found = 0
+        
+        for root, dirs, files in os.walk(target_folder):
+            if not pdf_keep_running:
+                break
+            
+            for file in files:
+                if not pdf_keep_running:
+                    break
+                    
+                if file.lower().endswith('.pdf'):
+                    # Skip files that look like parts we created to avoid loops if scanning same dir
+                    if "_part_" in file:
+                         continue
+                         
+                    file_path = os.path.join(root, file)
+                    try:
+                        size_mb = os.path.getsize(file_path) / (1024 * 1024)
+                        
+                        if size_mb > PDF_MAX_SIZE_MB: # Trigger threshold
+                            pdf_files_found += 1
+                            log_to_buffer(f"Processing: {file} ({size_mb:.2f} MB)...\n")
+                            
+                            # Log object for helper function
+                            # We can pass a dummy object that has a .write method that calls log_to_buffer
+                            class LogWrapper:
+                                def write(self, msg):
+                                    log_to_buffer(msg)
+                                def flush(self):
+                                    pass
+                            
+                            split_pdf_adaptive(file_path, max_mb, initial_pages, LogWrapper())
+                            log_to_buffer(f"Done with {file}\n\n")
+                            
+                    except OSError as e:
+                        log_to_buffer(f"*** ERROR accessing {file}: {e}\n")
+
+        end_time = datetime.now()
+        duration = end_time - start_time
+        log_to_buffer("-" * 60 + "\n")
+        log_to_buffer(f"FINISHED. Processed {pdf_files_found} large PDF(s).\n")
+        log_to_buffer(f"Total Time: {duration}\n")
+
+    except Exception as e:
+        log_to_buffer(f"*** CRITICAL ERROR: {e}\n")
+    finally:
+        pdf_script_running = False
+
 class MyHandler(http.server.SimpleHTTPRequestHandler):
     """
     Custom HTTP request handler for the web interface.
@@ -243,6 +395,58 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'started', 'log_file_path': log_file_path}).encode('utf-8'))
+            return
+
+            return
+            
+        elif url_path == '/run_pdf_splitter':
+            if pdf_script_running:
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'running'}).encode('utf-8'))
+                return
+
+            content_len = int(self.headers.get('Content-Length', 0))
+            post_body = self.rfile.read(content_len)
+            data = json.loads(post_body)
+            
+            target_folder = data.get('target_folder', root_directory)
+            try:
+                max_mb = float(data.get('max_size_mb', PDF_TARGET_CHUNK_MB))
+            except:
+                max_mb = PDF_TARGET_CHUNK_MB
+                
+            try:
+                initial_pages = int(data.get('initial_page_count', PDF_PAGE_CHUNK_LIMIT))
+            except:
+                initial_pages = PDF_PAGE_CHUNK_LIMIT
+
+            # Start thread
+            thread = threading.Thread(target=run_pdf_script, args=(target_folder, max_mb, initial_pages))
+            thread.daemon = True
+            thread.start()
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'started'}).encode('utf-8'))
+            return
+
+        elif url_path == '/get_pdf_output':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            output_data = {'output': pdf_output_buffer}
+            globals()['pdf_output_buffer'] = [] # Clear buffer
+            self.wfile.write(json.dumps(output_data).encode('utf-8'))
+            return
+
+        elif url_path == '/check_pdf_status':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'running': pdf_script_running}).encode('utf-8'))
             return
 
         elif url_path == '/cancel_script':

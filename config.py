@@ -22,3 +22,14 @@ PORT = 2226
 
 # Files to exclude from the scan (e.g., the script files themselves)
 EXCLUDED_FILES = {"web_interface.py", "utils.py", "config.py", "index.html"}
+
+# --- PDF Splitter Configuration ---
+
+# Max size for a PDF file before it triggers the splitter (in MB)
+PDF_MAX_SIZE_MB = 180
+
+# Target size for each chunk (in MB)
+PDF_TARGET_CHUNK_MB = 100
+
+# Default number of pages per chunk (initial guess)
+PDF_PAGE_CHUNK_LIMIT = 1000
