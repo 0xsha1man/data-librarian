@@ -231,8 +231,9 @@
 
         <!-- DUPLICATE CLEANER SECTION -->
         <div id="duplicate-cleaner" class="feature-section active">
-            <div class="row">
-                <div id="root-folder">Root Folder: {rootfolder}</div>
+            <div class="input-group">
+                <label for="duplicate-target-folder">Target Folder (Absolute Path)</label>
+                <input type="text" id="duplicate-target-folder" value="{rootfolder}" placeholder="/path/to/folder">
             </div>
 
             <div class="row" style="flex-grow: 1;"></div>
@@ -286,9 +287,7 @@
     </div>
 
     <script>
-        const runButton = document.getElementById('runButton');
         const outputDiv = document.getElementById('output');
-        const cancelButton = document.getElementById('cancelButton');
         const statusLabel = document.getElementById('status-label');
         const statusText = document.getElementById('status-text');
         const timestampElement = document.getElementById('timestamp');
@@ -412,20 +411,35 @@
                 });
         }
 
+        // --- DUPLICATE CLEANER JS ---
+        /* Note: We use existing global variable names to minimize changes */
+        const runButton = document.getElementById('runButton');
+        const cancelButton = document.getElementById('cancelButton');
+        const duplicateTargetFolder = document.getElementById('duplicate-target-folder');
+
         runButton.addEventListener('click', () => {
             runButton.disabled = true;
-            cancelButton.disabled = true;
-            runButton.textContent = 'Starting Script...';
+            cancelButton.disabled = false;
+            runButton.textContent = 'Starting...';
             setStatus('Running');
-            fetch('/run_script')
+
+            const payload = {
+                target_folder: duplicateTargetFolder.value
+            };
+
+            fetch('/run_script', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'started') {
                         scriptRunning = true;
+                        runButton.textContent = 'Script Running...';
                         runButton.disabled = true;
                         cancelButton.disabled = false;
-                        runButton.textContent = 'Script Running...';
-                        getOutput(); // Start polling for output immediately
+                        getOutput();
                     } else if (data.status === 'running') {
                         alert('Script is already running!');
                         runButton.disabled = true;

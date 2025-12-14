@@ -81,7 +81,8 @@ The right-hand panel of the interface acts as your **Operations Console**. behav
 **Best for:** Cleaning up unorganized backups, merging folders, and freeing up storage space.
 
 1.  **Select Tab**: Click the **"Cleaner"** tab.
-2.  **Verify Root**: The "Root Folder" displayed is the directory where you ran the script. This is where it will look for duplicates.
+2.  **Target Folder**: Paste the absolute path of the folder you want to scan.
+    *   *Default:* The folder where the script is running.
 3.  **Start**: Click **"Clean Duplicates"**.
 4.  **Review**:
     *   The tool calculates hashes for all files.

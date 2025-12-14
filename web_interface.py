@@ -46,7 +46,7 @@ pdf_output_buffer = []
 # ------------------------------
 
 
-def run_script():
+def run_script(target_folder=None):
     """
     Runs the duplicate file cleaning script as a separate process
     and captures its output.
@@ -90,7 +90,10 @@ def run_script():
         # --- First Pass: Count files (for progress bar) ---
         log_message(log, "Calculating total files...\n")
         temp_total = 0
-        for root, dirs, files in os.walk(root_directory):
+        
+        scan_dir = target_folder if target_folder else root_directory
+        
+        for root, dirs, files in os.walk(scan_dir):
             # Ensure we respect excluded folders during count
             dirs[:] = [d for d in dirs if d not in EXCLUDED_FOLDERS]
             
@@ -99,11 +102,12 @@ def run_script():
             temp_total += len(current_files)
         
         total_files = temp_total # Assign to global
+        log_message(log, f"Scanning directory: {scan_dir}\n")
         log_message(log, f"Total files to scan: {total_files}\n")
         
         # --- Second Pass: Process files ---
         files_processed = 0 # Use a local counter for the final tally
-        for root, dirs, files in os.walk(root_directory):
+        for root, dirs, files in os.walk(scan_dir):
             if not keep_running:
                 log_message(log, "\n*** USER CANCELLATION DETECTED ***\n")
                 break
@@ -378,26 +382,30 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({'running': script_running, 'log_file_path': log_file_path}).encode('utf-8'))
             return
 
-        elif url_path == '/run_script':
-            if script_running:
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'status': 'running'}).encode('utf-8'))
-                return
-            
-            # Start the script in a new thread
-            thread = threading.Thread(target=run_script)
-            thread.daemon = True
-            thread.start()
-            
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'status': 'started', 'log_file_path': log_file_path}).encode('utf-8'))
-            return
-
-            return
+        elif self.path == "/run_script":
+           if script_running:
+               self.send_response(200)
+               self.send_header("Content-type", "application/json")
+               self.end_headers()
+               self.wfile.write(json.dumps({"status": "running"}).encode("utf-8"))
+           else:
+               # Parse request body to get target folder
+               content_length = int(self.headers.get('Content-Length', 0))
+               target_folder = None
+               if content_length > 0:
+                   post_data = self.rfile.read(content_length)
+                   try:
+                       data = json.loads(post_data.decode("utf-8"))
+                       target_folder = data.get("target_folder")
+                   except json.JSONDecodeError:
+                       pass
+               
+               # Start the script in a separate thread
+               threading.Thread(target=run_script, args=(target_folder,)).start()
+               self.send_response(200)
+               self.send_header("Content-type", "application/json")
+               self.end_headers()
+               self.wfile.write(json.dumps({"status": "started"}).encode("utf-8"))
             
         elif url_path == '/run_pdf_splitter':
             if pdf_script_running:
