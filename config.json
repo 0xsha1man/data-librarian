@@ -1,0 +1,43 @@
+{
+    "data_librarian": {
+        "server": {
+            "host": "127.0.0.1",
+            "port": 2226,
+            "scripts_dir": "./python_core",
+            "virtual_env": null,
+            "root_path": "/path/to/data"
+        },
+        "weeding": {
+            "dry_run_mode": true,
+            "log_path": "./_data_librarian/logs",
+            "log_file_prefix": "weeding_",
+            "holding_bin": "./_duplicate_bin",
+            "included_folders": [],
+            "excluded_folders": [
+                "_duplicate_bin"
+            ],
+            "included_files": [],
+            "excluded_files": [],
+            "included_extensions": [],
+            "excluded_extensions": [
+                ".tmp",
+                ".bak"
+            ]
+        },
+        "segmenting": {
+            "dry_run_mode": true,
+            "log_path": "./_data_librarian/logs",
+            "log_file_prefix": "segmenting_",
+            "max_mb": 100,
+            "chunk_limit": 1000,
+            "included_folders": [],
+            "excluded_folders": [],
+            "included_files": [],
+            "excluded_files": [],
+            "included_extensions": [
+                ".pdf"
+            ],
+            "excluded_extensions": []
+        }
+    }
+}

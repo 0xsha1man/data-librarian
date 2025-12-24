@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Data Librarian</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&family=Inter:wght@400;500;600;700&family=VT323&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Palette: Deep Slate & Electric Cyan */
+            --bg-dark: #09161c;
+            /* User specified darkest */
+            --bg-panel: #0d2029;
+            /* Sidebar/Header */
+            --bg-card: #142832;
+            /* Cards */
+            --bg-input: #1a3542;
+            /* Form elements */
+
+            --border-dim: #2a4552;
+            /* Borders */
+            --border-glow: #00f0ff;
+            /* Active borders */
+
+            --accent-primary: #00f0ff;
+            /* New Logo Cyan */
+            --accent-dim: rgba(0, 240, 255, 0.1);
+
+            --text-main: #e1e8eb;
+            --text-muted: #8fa3ad;
+
+            --font-ui: 'Inter', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+            --font-retro: 'VT323', monospace;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            overflow: hidden;
+        }
+
+        /* --- Retro Text Effects --- */
+        .retro-text {
+            font-family: var(--font-retro);
+            text-shadow: 0 0 2px rgba(0, 240, 255, 0.4);
+            letter-spacing: 1px;
+        }
+
+        .glow-text {
+            color: var(--accent-primary);
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+        }
+
+        /* --- Digital Index Card --- */
+        .index-card {
+            background-image:
+                linear-gradient(var(--bg-card), var(--bg-card)),
+                linear-gradient(90deg, rgba(42, 69, 82, 0.3) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 100%;
+            /* Fake grid lines */
+            border-left: 4px solid var(--accent-primary);
+            border-top: 1px solid var(--border-dim);
+            border-right: 1px solid var(--border-dim);
+            border-bottom: 1px solid var(--border-dim);
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .index-card::before {
+            /* The "Hole Punch" look - adjusted for slate theme */
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background-color: var(--bg-dark);
+            border-radius: 50%;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-dim);
+        }
+
+        .index-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
+        /* --- Scrollbars --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-dim);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3d5e6e;
+        }
+
+        /* --- Terminal Window --- */
+        .terminal-window {
+            font-family: var(--font-mono);
+            background-color: #060f13;
+            /* Slightly darker than bg-dark for contrast */
+            border-top: 2px solid var(--border-dim);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .scanline {
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Utilities for JS injection */
+        .text-accent {
+            color: var(--accent-primary);
+        }
+
+        .bg-accent {
+            background-color: var(--accent-primary);
+        }
+
+        .border-dim {
+            border-color: var(--border-dim);
+        }
+
+        .bg-panel {
+            background-color: var(--bg-panel);
+        }
+    </style>
+</head>
+
+<body class="h-screen w-screen flex flex-col md:flex-row">
+
+    <!-- SIDEBAR -->
+    <aside class="w-full md:w-64 bg-[var(--bg-panel)] border-r border-[var(--border-dim)] flex flex-col z-20">
+        <!-- Brand -->
+        <div class="h-16 flex items-center px-6 border-b border-[var(--border-dim)]">
+            <i class="fa-solid fa-server text-[var(--accent-primary)] mr-3 text-lg"></i>
+            <div>
+                <h1 class="font-bold text-gray-100 tracking-tight text-lg font-retro">DL_SYSTEM_V2</h1>
+                <div class="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-widest">Online</div>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <nav class="flex-1 overflow-y-auto py-6 space-y-1">
+            <div class="px-4 mb-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+                Core Modules</div>
+            <a href="#"
+                class="nav-item group flex items-center px-6 py-3 text-[var(--text-main)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-primary)] border-l-2 border-transparent hover:border-[var(--accent-primary)] transition-all"
+                data-target="dashboard">
+                <i class="fa-solid fa-grid-2 text-sm w-6"></i>
+                <span class="text-sm font-medium">Dashboard</span>
+            </a>
+            <a href="#"
+                class="nav-item group flex items-center px-6 py-3 text-[var(--text-main)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-primary)] border-l-2 border-transparent hover:border-[var(--accent-primary)] transition-all"
+                data-target="processors">
+                <i class="fa-solid fa-microchip text-sm w-6"></i>
+                <span class="text-sm font-medium">Processors</span>
+            </a>
+            <a href="#"
+                class="nav-item group flex items-center px-6 py-3 text-[var(--text-main)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-primary)] border-l-2 border-transparent hover:border-[var(--accent-primary)] transition-all"
+                data-target="library">
+                <i class="fa-solid fa-book text-sm w-6"></i>
+                <span class="text-sm font-medium">Library Index</span>
+            </a>
+
+            <div
+                class="px-4 mt-8 mb-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+                System</div>
+            <a href="#"
+                class="nav-item group flex items-center px-6 py-3 text-[var(--text-main)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-primary)] border-l-2 border-transparent hover:border-[var(--accent-primary)] transition-all">
+                <i class="fa-solid fa-terminal text-sm w-6"></i>
+                <span class="text-sm font-medium">CLI Config</span>
+            </a>
+            <a href="#"
+                class="nav-item group flex items-center px-6 py-3 text-[var(--text-main)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-primary)] border-l-2 border-transparent hover:border-[var(--accent-primary)] transition-all">
+                <i class="fa-solid fa-gear text-sm w-6"></i>
+                <span class="text-sm font-medium">Settings</span>
+            </a>
+        </nav>
+
+        <!-- User/Status Footer -->
+        <div class="p-4 border-t border-[var(--border-dim)]">
+            <div class="flex items-center">
+                <div
+                    class="w-8 h-8 rounded bg-[var(--accent-primary)] flex items-center justify-center text-[#09161c] font-bold font-retro text-lg">
+                    A</div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-white">Admin</p>
+                    <p class="text-xs text-[var(--text-muted)] font-mono">0xsha1man</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-full relative">
+
+        <!-- Header Toolbar -->
+        <header
+            class="h-16 bg-[var(--bg-panel)]/90 backdrop-blur-sm border-b border-[var(--border-dim)] flex items-center justify-between px-6 sticky top-0 z-10">
+            <div class="flex items-center space-x-4">
+                <h2 id="page-title" class="text-xl font-retro text-white tracking-wide retro-text">DASHBOARD</h2>
+                <span
+                    class="px-2 py-0.5 rounded text-[10px] font-mono bg-[var(--bg-input)] border border-[var(--border-dim)] text-[var(--text-muted)]">v2.5.0-beta</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="p-2 text-[var(--text-muted)] hover:text-white transition-colors"><i
+                        class="fa-solid fa-bell"></i></button>
+                <button
+                    class="bg-[var(--accent-primary)] text-[#09161c] hover:opacity-90 px-4 py-1.5 rounded-sm text-sm font-bold font-mono transition-colors shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+                    <i class="fa-solid fa-play mr-2"></i>RUN QUEUE
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Area (Scrollable) -->
+        <div id="content-area" class="flex-1 overflow-y-auto p-6 bg-[var(--bg-dark)]">
+            <!-- Dynamic Content Injection Point -->
+        </div>
+
+        <!-- TERMINAL (Sticky Bottom) -->
+        <div id="terminal-panel"
+            class="terminal-window h-48 md:h-64 flex flex-col relative z-30 transition-all duration-300">
+            <!-- Drag Handle / Toolbar -->
+            <div class="h-8 bg-[#0d2029] border-b border-[var(--border-dim)] flex items-center justify-between px-4 cursor-ns-resize"
+                title="Resize Terminal">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-code text-[#556d7a] text-xs"></i>
+                    <span class="text-xs font-mono text-[var(--text-muted)]">OUTPUT_LOG</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button id="clear-log"
+                        class="text-[10px] font-mono text-[var(--text-muted)] hover:text-white uppercase">Clear</button>
+                    <button id="toggle-term" class="text-[var(--text-muted)] hover:text-white"><i
+                            class="fa-solid fa-chevron-down"></i></button>
+                </div>
+            </div>
+
+            <!-- Console Output -->
+            <div class="flex-1 p-4 overflow-y-auto font-mono text-xs md:text-sm text-[#8fa3ad] relative">
+                <div class="absolute inset-0 scanline z-10 pointer-events-none opacity-20"></div>
+                <div id="console-output" class="space-y-1 pb-4">
+                    <!-- Logs injected here -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- TEMPLATES (Hidden) -->
+    <template id="view-dashboard">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Stat Cards -->
+            <div class="index-card p-5">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="font-mono text-xs text-[var(--text-muted)] uppercase tracking-widest">Total Size</span>
+                    <i class="fa-solid fa-database text-[var(--accent-primary)]"></i>
+                </div>
+                <div class="text-3xl font-retro text-white">4.2 TB</div>
+                <div class="mt-2 text-xs text-[var(--text-muted)] font-mono">14,203 files indexed</div>
+            </div>
+            <div class="index-card p-5">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="font-mono text-xs text-[var(--text-muted)] uppercase tracking-widest">Processing</span>
+                    <i class="fa-solid fa-gears text-yellow-500"></i>
+                </div>
+                <div class="text-3xl font-retro text-white">12</div>
+                <div class="mt-2 text-xs text-[var(--text-muted)] font-mono">Queue active</div>
+            </div>
+            <div class="index-card p-5">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="font-mono text-xs text-[var(--text-muted)] uppercase tracking-widest">Efficiency</span>
+                    <i class="fa-solid fa-bolt text-blue-400"></i>
+                </div>
+                <div class="text-3xl font-retro text-white">94%</div>
+                <div class="mt-2 text-xs text-[var(--text-muted)] font-mono">Space saved via compression</div>
+            </div>
+            <div class="index-card p-5">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="font-mono text-xs text-[var(--text-muted)] uppercase tracking-widest">Errors</span>
+                    <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
+                </div>
+                <div class="text-3xl font-retro text-white">0</div>
+                <div class="mt-2 text-xs text-[var(--text-muted)] font-mono">Last 24 hours</div>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-retro text-[var(--text-muted)] mb-4 border-b border-[var(--border-dim)] pb-2">
+            ACTIVE_TASKS</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Active Task 1 -->
+            <div class="index-card p-0 flex flex-col">
+                <div
+                    class="bg-[var(--bg-input)] p-3 border-b border-[var(--border-dim)] flex justify-between items-center">
+                    <span class="font-mono text-xs text-[var(--accent-primary)]">TASK_ID: 8821a</span>
+                    <span class="font-mono text-[10px] text-[var(--text-muted)]">PDF_SPLITTER</span>
+                </div>
+                <div class="p-5 flex-1">
+                    <h4 class="font-bold text-gray-200 mb-1">Government_Grants_Set_1.pdf</h4>
+                    <p class="text-xs text-[var(--text-muted)] font-mono mb-4">/home/jesse/data/raw/...</p>
+
+                    <div
+                        class="w-full bg-[var(--bg-dark)] h-2 rounded-full overflow-hidden border border-[var(--border-dim)]">
+                        <div class="bg-[var(--accent-primary)] h-full" style="width: 45%"></div>
+                    </div>
+                    <div class="flex justify-between mt-2 font-mono text-xs">
+                        <span class="text-[var(--text-muted)]">Chunking pg 426-852</span>
+                        <span class="text-[var(--accent-primary)]">45%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Task 2 -->
+            <div class="index-card p-0 flex flex-col">
+                <div
+                    class="bg-[var(--bg-input)] p-3 border-b border-[var(--border-dim)] flex justify-between items-center">
+                    <span class="font-mono text-xs text-[var(--accent-primary)]">TASK_ID: 8821b</span>
+                    <span class="font-mono text-[10px] text-[var(--text-muted)]">AUDIO_TAGGER</span>
+                </div>
+                <div class="p-5 flex-1">
+                    <h4 class="font-bold text-gray-200 mb-1">Lectures_Archive_2024</h4>
+                    <p class="text-xs text-[var(--text-muted)] font-mono mb-4">/mnt/audio/unprocessed/...</p>
+
+                    <div
+                        class="w-full bg-[var(--bg-dark)] h-2 rounded-full overflow-hidden border border-[var(--border-dim)]">
+                        <div class="bg-blue-500 h-full" style="width: 12%"></div>
+                    </div>
+                    <div class="flex justify-between mt-2 font-mono text-xs">
+                        <span class="text-[var(--text-muted)]">Fetching Metadata...</span>
+                        <span class="text-blue-500">12%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="view-processors">
+        <h3 class="text-lg font-retro text-[var(--text-muted)] mb-4 border-b border-[var(--border-dim)] pb-2">
+            AVAILABLE_TOOLS</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Tool Card -->
+            <div class="index-card p-6 cursor-pointer group hover:border-[var(--accent-primary)] transition-colors">
+                <div class="flex items-center justify-between mb-4">
+                    <i
+                        class="fa-regular fa-file-pdf text-2xl text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]"></i>
+                    <span
+                        class="bg-[var(--bg-input)] text-[var(--text-muted)] text-[10px] font-mono px-2 py-1 border border-[var(--border-dim)]">CLI_WRAPPER</span>
+                </div>
+                <h4 class="text-xl font-bold text-white mb-2">PDF Splitter</h4>
+                <p class="text-sm text-[var(--text-muted)] mb-4 font-mono leading-relaxed">
+                    Splits large PDF documents into semantic chunks based on token limits or page counts.
+                </p>
+                <button
+                    class="w-full py-2 border border-[var(--border-dim)] hover:bg-[var(--accent-primary)] hover:text-[#09161c] hover:border-[var(--accent-primary)] text-[var(--text-main)] font-mono text-xs transition-colors uppercase"
+                    onclick="window.app.triggerProcess('PDF Splitter')">
+                    Launch Tool
+                </button>
+            </div>
+
+            <!-- Tool Card -->
+            <div class="index-card p-6 cursor-pointer group hover:border-blue-500 transition-colors">
+                <div class="flex items-center justify-between mb-4">
+                    <i class="fa-solid fa-film text-2xl text-[var(--text-muted)] group-hover:text-blue-500"></i>
+                    <span
+                        class="bg-[var(--bg-input)] text-[var(--text-muted)] text-[10px] font-mono px-2 py-1 border border-[var(--border-dim)]">FFMPEG</span>
+                </div>
+                <h4 class="text-xl font-bold text-white mb-2">Video Transcoder</h4>
+                <p class="text-sm text-[var(--text-muted)] mb-4 font-mono leading-relaxed">
+                    Batch convert MKV/AVI to optimized MP4. Supports hardware acceleration.
+                </p>
+                <button
+                    class="w-full py-2 border border-[var(--border-dim)] hover:bg-blue-500 hover:text-black hover:border-blue-500 text-[var(--text-main)] font-mono text-xs transition-colors uppercase"
+                    onclick="window.app.triggerProcess('Video Transcoder')">
+                    Launch Tool
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        class TerminalService {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.timestampColor = '#556d7a';
+            }
+
+            log(message, type = 'info') {
+                const line = document.createElement('div');
+                line.className = 'flex items-start font-mono text-xs md:text-sm animate-fade-in';
+
+                const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+
+                let typeColor = 'text-gray-400';
+                let prefix = 'INFO';
+
+                if (type === 'success') { typeColor = 'text-[var(--accent-primary)]'; prefix = 'OKAY'; }
+                if (type === 'error') { typeColor = 'text-red-500'; prefix = 'ERR '; }
+                if (type === 'warn') { typeColor = 'text-yellow-500'; prefix = 'WARN'; }
+                if (type === 'system') { typeColor = 'text-blue-400'; prefix = 'SYS '; }
+
+                line.innerHTML = `
+                    <span class="text-[${this.timestampColor}] mr-3 select-none">[${timestamp}]</span>
+                    <span class="${typeColor} font-bold mr-2 select-none">${prefix}</span>
+                    <span class="text-[#e1e8eb] break-all">${message}</span>
+                `;
+
+                this.container.appendChild(line);
+                this.container.scrollTop = this.container.scrollHeight;
+            }
+
+            clear() {
+                this.container.innerHTML = '';
+            }
+        }
+
+        class ViewManager {
+            constructor() {
+                this.contentArea = document.getElementById('content-area');
+                this.pageTitle = document.getElementById('page-title');
+            }
+
+            render(viewName) {
+                const template = document.getElementById(`view-${viewName}`);
+                if (!template) {
+                    console.error(`View ${viewName} not found`);
+                    return;
+                }
+
+                this.contentArea.innerHTML = '';
+                this.contentArea.appendChild(template.content.cloneNode(true));
+
+                // Update Header
+                this.pageTitle.innerText = viewName.toUpperCase();
+            }
+        }
+
+        class App {
+            constructor() {
+                this.terminal = new TerminalService('console-output');
+                this.viewManager = new ViewManager();
+                this.init();
+            }
+
+            init() {
+                // Attach Nav Listeners
+                document.querySelectorAll('.nav-item').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const target = e.currentTarget.dataset.target;
+                        if (target) this.switchView(target);
+                    });
+                });
+
+                // Attach Terminal Toggle
+                document.getElementById('toggle-term').addEventListener('click', () => {
+                    const panel = document.getElementById('terminal-panel');
+                    panel.classList.toggle('h-48');
+                    panel.classList.toggle('h-8'); // Minimized height
+                });
+
+                document.getElementById('clear-log').addEventListener('click', () => {
+                    this.terminal.clear();
+                });
+
+                // Init Default View
+                this.switchView('dashboard');
+
+                // Boot Message
+                setTimeout(() => this.terminal.log('System initialized. Environment: Production', 'system'), 500);
+                setTimeout(() => this.terminal.log('Connected to local daemon at port 8080', 'system'), 800);
+            }
+
+            switchView(viewName) {
+                this.viewManager.render(viewName);
+                this.terminal.log(`Mapsd to ${viewName.toUpperCase()} module`);
+            }
+
+            // Mock Process Trigger
+            triggerProcess(toolName) {
+                this.terminal.log(`Initializing ${toolName}...`, 'warn');
+
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 10;
+                    if (progress > 100) {
+                        clearInterval(interval);
+                        this.terminal.log(`${toolName} process completed successfully.`, 'success');
+                    } else {
+                        const files = ['data_chunk_01.pdf', 'data_chunk_02.pdf', 'audit_log.txt', 'manifest.json'];
+                        const file = files[Math.floor(Math.random() * files.length)];
+                        this.terminal.log(`Processing ${file} - ${(Math.random() * 50).toFixed(2)}MB`, 'info');
+                    }
+                }, 800);
+            }
+        }
+
+        // Initialize Global App
+        window.addEventListener('DOMContentLoaded', () => {
+            window.app = new App();
+        });
+
+    </script>
+</body>
+
+</html>

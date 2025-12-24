@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  --background: #1b1c1d;
+  --foreground: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-eagle-lake: var(--font-eagle-lake);
+  --font-roboto: var(--font-roboto);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-roboto), sans-serif;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}

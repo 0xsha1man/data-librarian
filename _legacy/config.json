@@ -1,0 +1,16 @@
+{
+    "__CORE_SETTINGS__": "--- Server and Global Settings ---",
+    "PORT": 2226,
+    "MOVE_DUPLICATES": false,
+    "__WEEDING_SETTINGS__": "--- Duplicate Cleaner (The Weeder) ---",
+    "DUPLICATE_HOLDING_DIR": "./_DuplicateHoldingBin",
+    "EXCLUDED_FOLDERS": [
+        "_DuplicateHoldingBin"
+    ],
+    "LOG_NAME_PREFIX": "_duplicate_log",
+    "__SEGMENTING_SETTINGS__": "--- PDF Splitter (The Partitioner) ---",
+    "PDF_TARGET_CHUNK_MB": 100,
+    "PDF_PAGE_CHUNK_LIMIT": 1000,
+    "__INTERNAL_SETTINGS__": "--- User Exclusions ---",
+    "USER_EXCLUDED_FILES": []
+}

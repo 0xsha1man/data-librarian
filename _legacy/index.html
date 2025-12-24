@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>The Data Librarian</title>
+    <link href="https://fonts.googleapis.com/css2?family=Eagle+Lake&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            font-family: 'Roboto', sans-serif;
+            background-color: rgb(27, 28, 29);
+            color: white;
+        }
+
+        h1 {
+            color: #ffffff;
+            text-align: center;
+            margin-top: 0;
+            font-family: 'Eagle Lake', cursive;
+            font-size: 2.5em;
+        }
+
+        #left-panel {
+            background-color: rgb(40, 42, 44);
+            width: 30%;
+            color: #ffffff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        #root-folder {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            word-wrap: break-word;
+        }
+
+        #status-label {
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+            width: 150px;
+            background-color: grey;
+        }
+
+        #button-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        #runButton,
+        #cancelButton,
+        #runPdfButton {
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            text-align: center;
+        }
+
+        #runButton {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #runButton:hover {
+            background-color: #45a049;
+        }
+
+        #runButton:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+        }
+
+        #cancelButton {
+            background-color: #FF4500;
+            color: white;
+        }
+
+        #cancelButton:hover {
+            background-color: #c8230c;
+        }
+
+        #cancelButton:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+        }
+
+        #runPdfButton {
+            background-color: #673ab7;
+            color: white;
+        }
+
+        #runPdfButton:hover {
+            background-color: #512da8;
+        }
+
+        #runPdfButton:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+        }
+
+
+        #log-last-updated {
+            font-size: 0.8em;
+            color: #7f8c8d;
+            margin-bottom: 0;
+        }
+
+        #log-file-path {
+            font-size: 0.75em;
+            color: #ffffff;
+            margin-bottom: 0;
+            word-wrap: break-word;
+        }
+
+        #right-panel {
+            flex: 1;
+            background-color: rgb(27, 28, 29);
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #output {
+            padding: 20px;
+            border: none;
+            flex-grow: 1;
+            overflow-y: auto;
+            font-family: monospace;
+            color: #ffffff;
+            line-height: 1.5;
+            white-space: pre;
+            overflow-x: auto;
+            box-sizing: border-box;
+            background-color: #212121;
+        }
+
+        .row {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+
+        /* Tabs */
+        .tab-server {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background-color: rgb(60, 62, 64);
+            border: none;
+            color: #ddd;
+            padding: 10px 20px;
+            cursor: pointer;
+            width: 50%;
+            transition: 0.3s;
+            font-size: 16px;
+        }
+
+        .tab-button:hover {
+            background-color: rgb(80, 82, 84);
+        }
+
+        .tab-button.active {
+            background-color: #A067E6;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Content Areas */
+        .feature-section {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        .feature-section.active {
+            display: flex;
+        }
+
+        /* Inputs */
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #bbb;
+        }
+
+        .input-group input[type="text"],
+        .input-group input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background-color: rgb(60, 62, 64);
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="left-panel">
+        <h1>The Data Librarian</h1>
+
+        <div class="tab-server">
+            <button id="tab-cleaner" class="tab-button active">Cleaner</button>
+            <button id="tab-pdf" class="tab-button">PDF Splitter</button>
+        </div>
+
+        <!-- DUPLICATE CLEANER SECTION -->
+        <div id="duplicate-cleaner" class="feature-section active">
+            <div class="input-group">
+                <label for="duplicate-target-folder">Target Folder (Absolute Path)</label>
+                <input type="text" id="duplicate-target-folder" value="{rootfolder}" placeholder="/path/to/folder">
+            </div>
+
+            <div class="row" style="flex-grow: 1;"></div>
+
+            <div id="button-container">
+                <button id="runButton">Clean Duplicates</button>
+                <button id="cancelButton" disabled>Cancel</button>
+            </div>
+        </div>
+
+        <!-- PDF SPLITTER SECTION -->
+        <div id="pdf-splitter" class="feature-section">
+            <div class="input-group">
+                <label for="pdf-target-folder">Target Folder (Absolute Path)</label>
+                <input type="text" id="pdf-target-folder" value="{rootfolder}" placeholder="/path/to/folder">
+            </div>
+
+            <div class="input-group">
+                <label for="pdf-max-size">Max File Size (MB)</label>
+                <input type="number" id="pdf-max-size" value="100">
+            </div>
+
+            <div class="input-group">
+                <label for="pdf-page-count">Initial Page Count (Est.)</label>
+                <input type="number" id="pdf-page-count" value="1000">
+            </div>
+
+            <div class="row" style="flex-grow: 1;"></div>
+
+            <div id="pdf-button-container" style="width: 100%;">
+                <button id="runPdfButton">Start Splitting</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="right-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <h1>
+                <div id="status-label"><span id="status-text">Not Started</span></div>
+            </h1>
+        </div>
+        <div class="row">
+            <div id="log-file-path">Log File: <span id="log_file_path">{log_file_path}</span></div>
+            <div id="progress-container" style="font-size: 0.8em; color: #7f8c8d; display: none;">
+                Files Checked: <span id="files-checked">0</span> / <span id="total-files">0</span>
+            </div>
+            <div id="log-last-updated">Log Last Updated: <span id="timestamp"></span></div>
+        </div>
+        <div id="output">{output}</div>
+    </div>
+
+    <!-- Modular JS -->
+    <script src="static/js/constants.js"></script>
+    <script src="static/js/api.js"></script>
+    <script src="static/js/state.js"></script>
+    <script src="static/js/ui.js"></script>
+    <script src="static/js/poller.js"></script>
+
+    <script>
+        // Main Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            UI.init();
+            Poller.init();
+        });
+    </script>
+</body>
+
+</html>
