@@ -1,23 +1,107 @@
 @import "tailwindcss";
 
+@import "./semantic-colors.css";
+
 :root {
-  --background: #1b1c1d;
-  --foreground: #ffffff;
+  /* Palette: Deep Slate & Electric Cyan */
+  --bg-dark: #09161c;
+  /* User specified darkest */
+  --bg-panel: #0d2029;
+  /* Sidebar/Header */
+  --bg-card: #142832;
+  /* Cards */
+  --bg-input: #1a3542;
+  /* Form elements */
+
+  --border-dim: #2a4552;
+  /* Borders */
+  --border-glow: var(--primary);
+  /* Active borders */
+
+  --accent-primary: var(--primary);
+  /* New Logo Cyan */
+  --accent-dim: var(--primary-dim);
+
+  --text-main: #e1e8eb;
+  --text-muted: #94a3b8;
+  /* Slate-400 - Brighter than previous */
+
+  /* Fonts will be handled by next/font, but we can map them here if needed for utilities */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-eagle-lake: var(--font-eagle-lake);
-  --font-roboto: var(--font-roboto);
+@theme {
+  --color-bg-dark: var(--bg-dark);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-card: var(--bg-card);
+  --color-bg-input: var(--bg-input);
+  --color-border-dim: var(--border-dim);
+  --color-border-glow: var(--border-glow);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-dim: var(--accent-dim);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+
+  /* Semantic Color Mapping */
+  --color-primary: var(--primary);
+  --color-primary-bg: var(--primary-bg);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-accent: var(--primary-accent);
+  --color-primary-dim: var(--primary-dim);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-bg: var(--secondary-bg);
+  --color-secondary-hover: var(--secondary-hover);
+
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-info-hover: var(--info-hover);
+
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-hover: var(--warning-hover);
+
+  --color-error: var(--error);
+  --color-error-bg: var(--error-bg);
+  --color-error-hover: var(--error-hover);
+
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-hover: var(--success-hover);
+
+  --font-ui: var(--font-inter);
+  --font-mono: var(--font-fira-code);
+  --font-retro: var(--font-vt323);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-roboto), sans-serif;
-  height: 100vh;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-ui);
+  overflow: hidden;
+}
+
+/* --- Scrollbars --- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3d5e6e;
+}
+
+/* --- Terminal Window --- */
+.terminal-window {
+  font-family: var(--font-mono);
+  background-color: #060f13;
+  border-top: 2px solid var(--border-dim);
 }

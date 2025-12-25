@@ -1,0 +1,79 @@
+@layer base {
+    :root {
+        /* 
+      BASE HSL VALUES 
+      H = Hue, S = Saturation %, L = Lightness %
+    */
+
+        /* Primary: Electric Blue #00f0ff (Hue ~184, Sat 100%, Light 50%) */
+        --p-h: 184;
+        --p-s: 100%;
+        --p-l: 50%;
+
+        /* Info: Blue #3B82F6 (Hue ~217, Sat 91%, Light 60%) */
+        --info-h: 217;
+        --info-s: 91%;
+        --info-l: 60%;
+
+        /* Warning: Orange #F59E0B (Hue ~38, Sat 92%, Light 50%) */
+        --warn-h: 38;
+        --warn-s: 92%;
+        --warn-l: 50%;
+
+        /* Error: Red #EF4444 (Hue ~0, Sat 84%, Light 60%) */
+        --err-h: 0;
+        --err-s: 84%;
+        --err-l: 60%;
+
+        /* Success: Emerald #10B981 (Hue ~151, Sat 65%, Light 41%) */
+        --succ-h: 151;
+        --succ-s: 65%;
+        --succ-l: 41%;
+
+        /* Secondary: Yellow #FACC15 (Hue ~48, Sat 96%, Light 53%) */
+        --sec-h: 48;
+        --sec-s: 96%;
+        --sec-l: 53%;
+
+        /* 
+      SEMANTIC VARIABLES (Dark Mode Optimized)
+      Using calc() to derive variations relative to base.
+    */
+
+        /* PRIMARY */
+        --primary: hsl(var(--p-h), var(--p-s), var(--p-l));
+        /* Darker background for cards/sections */
+        --primary-bg: hsl(var(--p-h), 40%, 15%);
+        /* Brighter/lighter for hover or active states */
+        --primary-hover: hsl(var(--p-h), var(--p-s), 60%);
+        /* Highly saturated accent (already 100% S, so just lighter/softer) */
+        --primary-accent: hsl(var(--p-h), var(--p-s), 40%);
+        /* Dim version for borders/subtle elements */
+        --primary-dim: hsla(var(--p-h), var(--p-s), var(--p-l), 0.15);
+
+        /* SECONDARY */
+        --secondary: hsl(var(--sec-h), var(--sec-s), var(--sec-l));
+        --secondary-bg: hsl(var(--sec-h), 30%, 15%);
+        --secondary-hover: hsl(var(--sec-h), var(--sec-s), 60%);
+
+        /* INFO */
+        --info: hsl(var(--info-h), var(--info-s), var(--info-l));
+        --info-bg: hsl(var(--info-h), 30%, 15%);
+        --info-hover: hsl(var(--info-h), var(--info-s), 70%);
+
+        /* WARNING */
+        --warning: hsl(var(--warn-h), var(--warn-s), var(--warn-l));
+        --warning-bg: hsl(var(--warn-h), 30%, 15%);
+        --warning-hover: hsl(var(--warn-h), var(--warn-s), 60%);
+
+        /* ERROR */
+        --error: hsl(var(--err-h), var(--err-s), var(--err-l));
+        --error-bg: hsl(var(--err-h), 30%, 15%);
+        --error-hover: hsl(var(--err-h), var(--err-s), 70%);
+
+        /* SUCCESS */
+        --success: hsl(var(--succ-h), var(--succ-s), var(--succ-l));
+        --success-bg: hsl(var(--succ-h), 30%, 15%);
+        --success-hover: hsl(var(--succ-h), var(--succ-s), 55%);
+    }
+}
