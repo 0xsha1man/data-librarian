@@ -18,7 +18,10 @@ export namespace DataLibrarian {
             const { server } = DLConfig.Config;
 
             // 2. Protocol-Relative Base
-            const baseUrl = `//${server.host}:${server.port}`;
+            // Use window.location.hostname if available to support network access
+            const host = typeof window !== 'undefined' ? window.location.hostname : server.host;
+            const baseUrl = `http://${host}:${server.port}`;
+
             const url = new URL(endpoint, baseUrl);
 
             if (params) {

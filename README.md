@@ -2,19 +2,16 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+## Quick Start
+
+The project includes a helper script to install dependencies and launch both the Backend and Frontend simultaneously.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+python start.py
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Dashboard**: http://localhost:3000
+- **Backend**: http://localhost:2226
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

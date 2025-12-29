@@ -1,11 +1,12 @@
 {
     "data_librarian": {
         "server": {
-            "host": "127.0.0.1",
+            "host": "0.0.0.0",
             "port": 2226,
             "scripts_dir": "./python_core",
-            "virtual_env": null,
-            "root_path": "/home/jesse/test-data"
+            "root_path": "/home/jesse/test-data",
+            "frontend_port": "3000",
+            "virtual_env": null
         },
         "weeding": {
             "dry_run_mode": true,

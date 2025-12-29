@@ -6,6 +6,28 @@ export namespace DataLibrarian {
     export class HeadLibrarian {
 
         private static CACHE_PREFIX = 'catalog_';
+        private static CONFIG_CACHE_KEY = 'sys_config';
+        private static SERVER_ID_KEY = 'sys_server_id';
+
+        /**
+         * Checks if the server has restarted since last visit.
+         * If so, flushes the configuration cache to ensure freshness.
+         */
+        static async verifyServerIdentity() {
+            const response = await Client.ApiClient.getServerStatus();
+            if (response.success && response.data && response.data.startup_time) {
+                const lastId = localStorage.getItem(this.SERVER_ID_KEY);
+                const currentId = response.data.startup_time.toString();
+
+                if (lastId !== currentId) {
+                    console.log('[HeadLibrarian] Server restart detected. Flushing Config Cache.');
+                    this.flushConfig();
+                    // Optionally flush catalog too if desired? User asked for "refresh the cache for the config"
+                    // this.flushCatalog(); 
+                    localStorage.setItem(this.SERVER_ID_KEY, currentId);
+                }
+            }
+        }
 
         /**
          * The Main Interface.
@@ -50,6 +72,60 @@ export namespace DataLibrarian {
         }
 
         /**
+         * Get Configuration (Cached)
+         */
+        static async getConfig(forceRefresh = false): Promise<DLApiTypes.ApiResponse<any>> {
+            // 1. Check Cache
+            if (!forceRefresh) {
+                const cached = typeof window !== 'undefined' ? localStorage.getItem(this.CONFIG_CACHE_KEY) : null;
+                if (cached) {
+                    try {
+                        const data = JSON.parse(cached);
+                        // Validate structure (Auto-heal corrupt cache)
+                        if (data && data.server) {
+                            return { success: true, data };
+                        } else {
+                            console.warn('[HeadLibrarian] Cached config invalid (missing server), flushing.');
+                            localStorage.removeItem(this.CONFIG_CACHE_KEY);
+                        }
+                    } catch (e) {
+                        localStorage.removeItem(this.CONFIG_CACHE_KEY);
+                    }
+                }
+            }
+
+            // 2. Fetch
+            const response = await Client.ApiClient.getConfig();
+
+            // 3. Update Cache
+            if (response.success && response.data) {
+                localStorage.setItem(this.CONFIG_CACHE_KEY, JSON.stringify(response.data));
+            }
+
+            return response;
+        }
+
+        /**
+         * Save Configuration & Update Cache
+         */
+        static async saveConfig(config: any): Promise<DLApiTypes.ApiResponse<any>> {
+            const response = await Client.ApiClient.saveConfig(config);
+
+            if (response.success) {
+                // Determine what to cache: the returned data (if backend returns full config) or the submitted config
+                // Backend returns {success: true, message: "...", data: {...actual_config...}}
+                // We need to ensure we cache ONLY the actual config object.
+                let dataToCache = response.data;
+                if (dataToCache && dataToCache.data) {
+                    dataToCache = dataToCache.data;
+                }
+                localStorage.setItem(this.CONFIG_CACHE_KEY, JSON.stringify(dataToCache || config));
+            }
+
+            return response;
+        }
+
+        /**
          * Clear the entire card catalog cache.
          * Useful for a "Hard Reload" button.
          */
@@ -60,6 +136,13 @@ export namespace DataLibrarian {
                     localStorage.removeItem(key);
                 }
             });
+        }
+
+        /**
+         * Clear the configuration cache.
+         */
+        static flushConfig() {
+            localStorage.removeItem(this.CONFIG_CACHE_KEY);
         }
     }
 }

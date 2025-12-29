@@ -53,5 +53,29 @@ export namespace DataLibrarian {
                 data: { path } // Path in Body
             });
         }
+        export async function getConfig(): Promise<DLApiTypes.ApiResponse<any>> {
+            // TODO: Ensure ApiServer points to new FastAPI port/paths
+            return DLApi.ApiServer.handleRequest({
+                type: DLEnums.RequestType.GET,
+                endpoint: "/api/config" as any, // Cast if enum is strict
+                data: {}
+            });
+        }
+
+        export async function saveConfig(config: any): Promise<DLApiTypes.ApiResponse<any>> {
+            return DLApi.ApiServer.handleRequest({
+                type: DLEnums.RequestType.POST,
+                endpoint: "/api/config" as any,
+                data: config
+            });
+        }
+
+        export async function getServerStatus(): Promise<DLApiTypes.ApiResponse<{ status: string, message: string, startup_time: number }>> {
+            return DLApi.ApiServer.handleRequest({
+                type: DLEnums.RequestType.GET,
+                endpoint: "/" as any,
+                data: {}
+            });
+        }
     }
 }

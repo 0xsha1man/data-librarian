@@ -1,3 +1,4 @@
+import CacheManager from "@/components/CacheManager";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Terminal from "@/components/Terminal";
@@ -39,6 +40,7 @@ export default function RootLayout({
         className={`${inter.variable} ${firaCode.variable} ${vt323.variable} antialiased h-screen w-screen overflow-hidden flex flex-row bg-[var(--bg-dark)] text-[var(--text-main)]`}
       >
         <TerminalProvider>
+          <CacheManager />
           <Sidebar />
           <main className="flex-1 flex flex-col h-full relative overflow-hidden">
             <Header />

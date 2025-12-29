@@ -5,7 +5,7 @@ interface HostProps {
     port: number;
     root_path: string;
     scripts_dir: string;
-    virtual_env: string | null;
+
 }
 
 interface BaseModuleProps {

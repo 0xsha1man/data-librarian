@@ -8,7 +8,7 @@ import threading
 class ServerConfig:
     
     _instance = None
-    _lock = threading.Lock()
+    _lock = threading.RLock()
 
     def __new__(cls, config_path="config.json"):
         if cls._instance is None:
@@ -71,8 +71,8 @@ class ServerConfig:
     # args:
     #     module_name (str): e.g., 'weeding', 'segmenting'
     def get_module_config(self, module_name):
-        modules = self.get_root().get("modules", {})
-        return modules.get(module_name, {})
+        # Flattened structure: data_librarian.{module_name}
+        return self.get_root().get(module_name, {})
 
     # Updates a setting for a specific module and saves to disk.
     def update_module_setting(self, module_name, key, value):
@@ -80,12 +80,12 @@ class ServerConfig:
 
         with self._lock:
             root = self.data.get("data_librarian", {})
-            modules = root.get("modules", {})
-
-            if module_name in modules:
-                modules[module_name][key] = value
+            
+            # Check if module exists directly under root
+            if module_name in root:
+                root[module_name][key] = value
+                
                 # Ensure structure integrity
-                root["modules"] = modules
                 self.data["data_librarian"] = root
                 self.save()
                 return True
